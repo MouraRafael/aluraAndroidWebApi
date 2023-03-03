@@ -66,7 +66,7 @@ public class ListaProdutosActivity extends AppCompatActivity {
                 Toast.makeText(this,"Não foi possível buscar os Produtos",Toast.LENGTH_SHORT).show();
             }
 
-        });
+        }).execute();
 
 
 //        new BaseAsyncTask<>(dao::buscaTodos,
