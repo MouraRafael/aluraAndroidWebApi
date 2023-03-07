@@ -19,6 +19,7 @@ public class ProdutoRepository {
     }
 
 
+    //metodos de busca de lista de produtos
     public void buscaProdutos(ProdutosCarregadosListener listener) {
 
 
@@ -59,4 +60,5 @@ public class ProdutoRepository {
     public interface ProdutosCarregadosListener{
         void quandoCarregados(List<Produto> produtos);
     }
+    //metodos de busca de lista de produtos
 }
