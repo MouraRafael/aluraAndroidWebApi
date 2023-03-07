@@ -20,13 +20,13 @@ public class ProdutoRepository {
 
 
     //metodos de busca de lista de produtos
-    public void buscaProdutos(ProdutosCarregadosListener listener) {
+    public void buscaProdutos(DadosCarregadosListener<List<Produto>> listener) {
 
 
         buscaProdutosInternos(listener);
     }
 
-    private void buscaProdutosInternos(ProdutosCarregadosListener listener) {
+    private void buscaProdutosInternos(DadosCarregadosListener<List<Produto>> listener) {
         new BaseAsyncTask<>(dao::buscaTodos,
                 resultado -> {
                     // listener para notificar o adapter de mudancas
@@ -38,7 +38,7 @@ public class ProdutoRepository {
                 .execute();
     }
 
-    private void buscaProdutosNaAPI(ProdutosCarregadosListener listener) {
+    private void buscaProdutosNaAPI(DadosCarregadosListener<List<Produto>> listener) {
         ProdutoService service = new EstoqueRetrofit().getProdutoService();
         Call<List<Produto>> call = service.buscaTodos();
 
@@ -56,9 +56,23 @@ public class ProdutoRepository {
         }, listener::quandoCarregados
         ).executeOnExecutor(BaseAsyncTask.THREAD_POOL_EXECUTOR);
     }
+    // fim metodos de busca de lista de produtos
 
-    public interface ProdutosCarregadosListener{
-        void quandoCarregados(List<Produto> produtos);
+    public void salva(Produto produto, DadosCarregadosListener<Produto> listener) {
+        new BaseAsyncTask<>(() -> {
+            long id = dao.salva(produto);
+            return dao.buscaProduto(id);
+        }, produtoSalvo ->
+                //notificacao ao adapter
+                listener.quandoCarregados(produtoSalvo)
+                )
+                .execute();
     }
-    //metodos de busca de lista de produtos
+
+    // metodos de salvamento de produtos
+
+    public interface DadosCarregadosListener<T> {
+        void quandoCarregados(T produtos);
+    }
+
 }
