@@ -62,29 +62,44 @@ public class ProdutoRepository {
     // fim metodos de busca de lista de produtos
 
     public void salva(Produto produto, DadosCarregadosListener<Produto> listener) {
+        salvaNaApi(produto, listener);
+
+
+    }
+
+    private void salvaNaApi(Produto produto, DadosCarregadosListener<Produto> listener) {
         Call<Produto> call = service.salva(produto);
         call.enqueue(new Callback<Produto>() {
             @Override
             public void onResponse(Call<Produto> call, Response<Produto> response) {
-                Produto produtoQueFoiSalvo = response.body();
-                new BaseAsyncTask<>(() -> {
-                    long id = dao.salva(produtoQueFoiSalvo);
-                    return dao.buscaProduto(id);
-                }, produtoSalvo ->
-                        //notificacao ao adapter
-                        listener.quandoCarregados(produtoSalvo)
-                )
-                        .execute();
+                if(response.isSuccessful()){
+                    Produto produtoQueFoiSalvo = response.body();
+                    if(produtoQueFoiSalvo != null){
+                        salvaInterno(produtoQueFoiSalvo, listener);
+                    }
+                }else {
+                    //notificar falha
+                }
 
             }
 
             @Override
             public void onFailure(Call<Produto> call, Throwable t) {
+                //notificar falha
 
             }
         });
+    }
 
-
+    private void salvaInterno(Produto produto, DadosCarregadosListener<Produto> listener) {
+        new BaseAsyncTask<>(() -> {
+            long id = dao.salva(produto);
+            return dao.buscaProduto(id);
+        }, produtoSalvo ->
+                //notificacao ao adapter
+                listener.quandoCarregados(produtoSalvo)
+        )
+                .execute();
     }
 
     // metodos de salvamento de produtos
