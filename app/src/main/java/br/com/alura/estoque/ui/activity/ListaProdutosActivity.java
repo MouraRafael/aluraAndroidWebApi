@@ -75,7 +75,18 @@ public class ListaProdutosActivity extends AppCompatActivity {
 
     private void abreFormularioSalvaProduto() {
         new SalvaProdutoDialog(this, produtoCriado ->{
-            repository.salva(produtoCriado,adapter::adiciona);
+            repository.salva(produtoCriado, new ProdutoRepository.DadosCarregadosCallback<Produto>() {
+                @Override
+                public void quandoSucesso(Produto produtoSalvo) {
+                    adapter.adiciona(produtoSalvo);
+                }
+
+                @Override
+                public void quandoFalha(String erro) {
+                    Toast.makeText(ListaProdutosActivity.this,"Não foi possivel salvar o produto"+erro,Toast.LENGTH_LONG).show();
+
+                }
+            });
             //Mesmo que:
             //repository.salva(produtoCriado, produtoASerAtualizado-> adapter.adiciona(produtoASerAtualizado));
         }).mostra();
