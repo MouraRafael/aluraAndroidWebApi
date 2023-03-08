@@ -1,8 +1,11 @@
 package br.com.alura.estoque.repository;
 
+import android.content.Context;
+
 import java.util.List;
 
 import br.com.alura.estoque.asynctask.BaseAsyncTask;
+import br.com.alura.estoque.database.EstoqueDatabase;
 import br.com.alura.estoque.database.dao.ProdutoDAO;
 import br.com.alura.estoque.model.Produto;
 import br.com.alura.estoque.retrofit.EstoqueRetrofit;
@@ -18,16 +21,15 @@ public class ProdutoRepository {
     private final ProdutoDAO dao;
     private final ProdutoService service;
 
-    public ProdutoRepository(ProdutoDAO dao) {
-        this.dao = dao;
+    public ProdutoRepository(Context context) {
+        EstoqueDatabase db = EstoqueDatabase.getInstance(context);
+        dao = db.getProdutoDAO();
         service = new EstoqueRetrofit().getProdutoService();
     }
 
 
     //metodos de busca de lista de produtos
     public void buscaProdutos(DadosCarregadosCallback<List<Produto>> callback) {
-
-
         buscaProdutosInternos(callback);
     }
 
@@ -36,17 +38,13 @@ public class ProdutoRepository {
                 resultado -> {
                     // callback para notificar o adapter de mudancas
                     callback.quandoSucesso(resultado);
-
                     buscaProdutosNaAPI(callback);
-
                 })
                 .execute();
     }
 
     private void buscaProdutosNaAPI(DadosCarregadosCallback<List<Produto>> callback) {
-
         Call<List<Produto>> call = service.buscaTodos();
-
         call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallback<List<Produto>>() {
             @Override
             public void quandoSucesso(List<Produto> resultado) {
@@ -74,16 +72,18 @@ public class ProdutoRepository {
 //        ).executeOnExecutor(BaseAsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    private void atualizaInterno(List<Produto> produtos, DadosCarregadosCallback<List<Produto>> callback) {
-        new BaseAsyncTask<>(()->{
-                dao.salva(produtos);
-                return dao.buscaTodos();
+    private void atualizaInterno(List<Produto> produtos,
+                                 DadosCarregadosCallback<List<Produto>> callback) {
+        new BaseAsyncTask<>(() -> {
+            dao.salva(produtos);
+            return dao.buscaTodos();
         }, callback::quandoSucesso)
                 .execute();
     }
     // fim metodos de busca de lista de produtos
 
-    public void salva(Produto produto, DadosCarregadosCallback<Produto> callback) {
+    public void salva(Produto produto,
+                      DadosCarregadosCallback<Produto> callback) {
         salvaNaApi(produto, callback);
 
 
@@ -96,7 +96,7 @@ public class ProdutoRepository {
         call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallback<Produto>() {
             @Override
             public void quandoSucesso(Produto resultado) {
-                salvaInterno(resultado,callback);
+                salvaInterno(resultado, callback);
             }
 
             @Override
@@ -145,9 +145,8 @@ public class ProdutoRepository {
     //fim metodos de salvamento de produtos
 
 
-
     //metodos de edicao de produto
-    public void edita(Produto produto,DadosCarregadosCallback<Produto> callback) {
+    public void edita(Produto produto, DadosCarregadosCallback<Produto> callback) {
         Call<Produto> call = service.edita(produto.getId(), produto);
         call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallback<Produto>() {
             @Override
@@ -163,7 +162,6 @@ public class ProdutoRepository {
         }));
 
 
-
     }
 
     private void editaInterno(Produto produto, DadosCarregadosCallback<Produto> callback) {
@@ -177,7 +175,7 @@ public class ProdutoRepository {
 
 
     //metodos de remocao
-    public void remove(Produto produto,DadosCarregadosCallback<Void> callback) {
+    public void remove(Produto produto, DadosCarregadosCallback<Void> callback) {
         removeNaApi(produto, callback);
 
 
@@ -208,8 +206,9 @@ public class ProdutoRepository {
                 .execute();
     }
 
-    public  interface DadosCarregadosCallback<T>{
+    public interface DadosCarregadosCallback<T> {
         void quandoSucesso(T resultado);
+
         void quandoFalha(String erro);
     }
 }
