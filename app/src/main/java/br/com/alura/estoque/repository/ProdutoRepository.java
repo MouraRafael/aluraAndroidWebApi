@@ -141,8 +141,37 @@ public class ProdutoRepository {
                 .execute();
     }
 
-    // metodos de salvamento de produtos
+    //fim metodos de salvamento de produtos
 
+
+
+    //metodos de edicao de produto
+    public void edita(Produto produto,DadosCarregadosCallback<Produto> callback) {
+        Call<Produto> call = service.edita(produto.getId(), produto);
+        call.enqueue(new BaseCallBack<>(new BaseCallBack.RespostaCallback<Produto>() {
+            @Override
+            public void quandoSucesso(Produto resultado) {
+                editaInterno(produto, callback);
+
+            }
+
+            @Override
+            public void quandoFalha(String erro) {
+                callback.quandoFalha(erro);
+            }
+        }));
+
+
+
+    }
+
+    private void editaInterno(Produto produto, DadosCarregadosCallback<Produto> callback) {
+        new BaseAsyncTask<>(() -> {
+            dao.atualiza(produto);
+            return produto;
+        }, callback::quandoSucesso)
+                .execute();
+    }
 
 
     public  interface DadosCarregadosCallback<T>{
