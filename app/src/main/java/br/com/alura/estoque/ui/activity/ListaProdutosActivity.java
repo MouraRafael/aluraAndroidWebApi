@@ -55,7 +55,7 @@ public class ListaProdutosActivity extends AppCompatActivity {
 
             @Override
             public void quandoFalha(String erro) {
-                Toast.makeText(ListaProdutosActivity.this,erro,Toast.LENGTH_SHORT);
+                Toast.makeText(ListaProdutosActivity.this,erro,Toast.LENGTH_SHORT).show();
             }
         });
     }
