@@ -24,41 +24,69 @@ public class ProdutoRepository {
 
 
     //metodos de busca de lista de produtos
-    public void buscaProdutos(DadosCarregadosListener<List<Produto>> listener) {
+    public void buscaProdutos(DadosCarregadosCallback<List<Produto>> callback) {
 
 
-        buscaProdutosInternos(listener);
+        buscaProdutosInternos(callback);
     }
 
-    private void buscaProdutosInternos(DadosCarregadosListener<List<Produto>> listener) {
+    private void buscaProdutosInternos(DadosCarregadosCallback<List<Produto>> callback) {
         new BaseAsyncTask<>(dao::buscaTodos,
                 resultado -> {
-                    // listener para notificar o adapter de mudancas
-                    listener.quandoCarregados(resultado);
+                    // callback para notificar o adapter de mudancas
+                    callback.quandoSucesso(resultado);
 
-                    buscaProdutosNaAPI(listener);
+                    buscaProdutosNaAPI(callback);
 
                 })
                 .execute();
     }
 
-    private void buscaProdutosNaAPI(DadosCarregadosListener<List<Produto>> listener) {
+    private void buscaProdutosNaAPI(DadosCarregadosCallback<List<Produto>> callback) {
 
         Call<List<Produto>> call = service.buscaTodos();
 
-        new BaseAsyncTask<>(() -> {
-            try {
-                Response<List<Produto>> resposta = call.execute();
-                List<Produto> produtosNovos = resposta.body();
-                dao.salva(produtosNovos);
+        call.enqueue(new Callback<List<Produto>>() {
+            @Override
+            @EverythingIsNonNull
+            public void onResponse(Call<List<Produto>> call,
+                                   Response<List<Produto>> response) {
 
-            } catch (IOException e) {
-                e.printStackTrace();
+                if(response.isSuccessful()){
+                    List<Produto> produtosNovos = response.body();
+                    if(produtosNovos !=null){
+                        new BaseAsyncTask<>(()->{
+                                dao.salva(produtosNovos);
+                                return dao.buscaTodos();
+                        },callback::quandoSucesso)
+                                .execute();
+
+                    }else{
+                        callback.quandoFalha("Resposta não sucedida");
+                    }
+                }
             }
-            return dao.buscaTodos();
 
-        }, listener::quandoCarregados
-        ).executeOnExecutor(BaseAsyncTask.THREAD_POOL_EXECUTOR);
+            @Override
+            @EverythingIsNonNull
+            public void onFailure(Call<List<Produto>> call, Throwable t) {
+                callback.quandoFalha("Falha de comunicação"+t.getMessage());
+            }
+        });
+
+//        new BaseAsyncTask<>(() -> {
+//            try {
+//                Response<List<Produto>> resposta = call.execute();
+//                List<Produto> produtosNovos = resposta.body();
+//                dao.salva(produtosNovos);
+//
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            return dao.buscaTodos();
+//
+//        }, callback::quandoCarregados
+//        ).executeOnExecutor(BaseAsyncTask.THREAD_POOL_EXECUTOR);
     }
     // fim metodos de busca de lista de produtos
 
@@ -109,9 +137,7 @@ public class ProdutoRepository {
 
     // metodos de salvamento de produtos
 
-    public interface DadosCarregadosListener<T> {
-        void quandoCarregados(T produtos);
-    }
+
 
     public  interface DadosCarregadosCallback<T>{
         void quandoSucesso(T resultado);

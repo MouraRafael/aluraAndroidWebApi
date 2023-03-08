@@ -47,7 +47,17 @@ public class ListaProdutosActivity extends AppCompatActivity {
         repository = new ProdutoRepository(dao);
 
         //repository.buscaProdutos(lista->adapter.atualiza(lista)); // mesma coisa que o codigo de baixo
-        repository.buscaProdutos(adapter::atualiza);
+        repository.buscaProdutos(new ProdutoRepository.DadosCarregadosCallback<List<Produto>>() {
+            @Override
+            public void quandoSucesso(List<Produto> resultado) {
+                adapter.atualiza(resultado);
+            }
+
+            @Override
+            public void quandoFalha(String erro) {
+                Toast.makeText(ListaProdutosActivity.this,erro,Toast.LENGTH_SHORT);
+            }
+        });
     }
 
 
